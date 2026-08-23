@@ -1,0 +1,9 @@
+{
+  "api_key": "",
+  "api_key_note": "여기에 발급받은 OpenAI 키(sk-...)를 넣으세요. 이 파일은 절대 GitHub에 올리지 마세요.",
+  "duplicate_policy": "skip",
+  "min_review_length": 5,
+  "font_name_mac": "AppleGothic",
+  "font_name_windows": "Malgun Gothic",
+  "export_formats": ["csv", "excel", "jsonl"]
+}
