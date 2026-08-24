@@ -61,32 +61,59 @@ def build_parser():
 
 
 def main():
+
     storage.init_db()
+
     parser = build_parser()
+
     args = parser.parse_args()
 
     if args.command == "import":
-        # import importer; importer.import_reviews(args.file)  # B가 완성하면 주석 해제
-        print(f"[준비 중] import --file {args.file}")
+
+        import importer
+
+        importer.import_reviews(args.file)
+
     elif args.command == "clean":
-        print("[준비 중] clean")
+
+        import importer
+
+        importer.clean_reviews()
+
     elif args.command == "analyze":
+
         print("[준비 중] analyze")
+
     elif args.command == "extract":
+
         print("[준비 중] extract")
+
     elif args.command == "list":
+
         print("[준비 중] list")
+
     elif args.command == "show":
+
         print(f"[준비 중] show {args.id}")
+
     elif args.command == "stats":
+
         print("[준비 중] stats")
+
     elif args.command == "dashboard":
+
         print("[준비 중] dashboard")
+
     elif args.command == "export":
+
         print("[준비 중] export")
+
     else:
+
         parser.print_help()
 
 
 if __name__ == "__main__":
+
     main()
+ 
