@@ -79,14 +79,49 @@ def main():
         import importer
 
         importer.clean_reviews()
-
     elif args.command == "analyze":
+        import analyzer
+        if args.review_id:
+            reviews = [storage.get_review_by_id(args.review_id)]
+            reviews = [r for r in reviews if r]
+            unanalyzed_only = False
+        elif args.all_:
+            reviews = storage.get_all_reviews(status="clean")
+            unanalyzed_only = False
+        else:
+            reviews = storage.get_unanalyzed(limit=args.limit)
+            unanalyzed_only = False
 
-        print("[준비 중] analyze")
+        total = len(reviews)
+        print(f"[INFO] 분석 대상: {total}건")
+        results = analyzer.analyze_reviews(reviews, unanalyzed_only=unanalyzed_only, limit=args.limit)
+        for i, r in enumerate(results, start=1):
+            storage.update_sentiment(r["id"], r["sentiment"], r["score"])
+            print(f"[INFO] [{i}/{len(results)}] ID={r['id']} 분석 완료: {r['sentiment']} ({r['score']})")
+        print(f"[INFO] 분석 완료: {len(results)}건 성공, {total - len(results)}건 실패/스킵")
 
     elif args.command == "extract":
+        import analyzer
+        reviews = storage.query_reviews(sentiment=args.sentiment)
+        if args.product:
+            reviews = [r for r in reviews if r.get("product") == args.product]
+        reviews = reviews[:30]
 
-        print("[준비 중] extract")
+        condition_desc = f"sentiment={args.sentiment or '전체'}, product={args.product or '전체'}"
+        print(f"[INFO] 추출 대상: {condition_desc} {len(reviews)}건")
+        result = analyzer.extract_insights(reviews, target_condition=condition_desc)
+
+        if result:
+            keywords = ", ".join(result.get("keywords", []))
+            summary = result.get("summary", "")
+            suggestions = result.get("suggestions", "")
+            storage.insert_extraction(condition_desc, keywords, "", summary, suggestions)
+            print("[INFO] 추출 완료\n")
+            print(f"[주요 키워드]\n{keywords}")
+            print(f"\n[요약]\n{summary}")
+            print(f"\n[개선 제안]\n{suggestions}")
+        else:
+            print("[WARNING] 추출 실패 (API 에러 또는 대상 리뷰 없음)")
 
     elif args.command == "list":
 
