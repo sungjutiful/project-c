@@ -5,9 +5,8 @@ extract: 키워드·요약·개선 제안 추출 (storage.insert_extraction 사�
 """
 # C가 여기 채우기
 
-import os
 
-clean_code = """import json
+import json
 import logging
 import os
 import openai
@@ -26,10 +25,10 @@ except FileNotFoundError:
 
 
 def get_sentiment_prompt(review_text: str) -> str:
-    \"\"\"
+    """
     단일 리뷰 감정 분석을 위한 프롬프트 생성
-    \"\"\"
-    return f\"\"\"Analyze the sentiment of the following customer review.
+    """
+    return f"""Analyze the sentiment of the following customer review.
 Classify it as one of: positive, negative, or neutral. Also provide a confidence score between 0.0 and 1.0.
 
 [Constraints]
@@ -41,21 +40,13 @@ Classify it as one of: positive, negative, or neutral. Also provide a confidence
 
 [Review]
 "{review_text}"
-\"\"\"
+"""
 
 
 def analyze_reviews(reviews_data: list, unanalyzed_only: bool = True, limit: int = None) -> list:
-    \"\"\"
+    """
     리뷰 데이터에 대한 감정 분석 수행 (OpenAI API 연동)
-    
-    Args:
-        reviews_data (list): 리뷰 딕셔너리 리스트
-        unanalyzed_only (bool): True일 경우 기분석 데이터 스킵
-        limit (int): 최대 처리 건수 제한
-        
-    Returns:
-        list: 감정 분석 결과가 포함된 리스트
-    \"\"\"
+    """
     if not reviews_data:
         return []
 
@@ -115,10 +106,10 @@ def analyze_reviews(reviews_data: list, unanalyzed_only: bool = True, limit: int
 
 
 def get_extraction_prompt(combined_texts: str) -> str:
-    \"\"\"
+    """
     다중 리뷰 종합 인사이트 추출을 위한 프롬프트 생성
-    \"\"\"
-    return f\"\"\"Analyze the provided customer reviews and extract key insights.
+    """
+    return f"""Analyze the provided customer reviews and extract key insights.
 Output strictly in the specified JSON format.
 
 [Constraints]
@@ -134,26 +125,19 @@ Output strictly in the specified JSON format.
 
 [Reviews]
 {combined_texts}
-\"\"\"
+"""
 
 
 def extract_insights(reviews_data: list, target_condition: str = "custom") -> dict:
-    \"\"\"
+    """
     조건별 리뷰 리스트를 종합하여 키워드 및 인사이트 추출
-    
-    Args:
-        reviews_data (list): 분석할 리뷰 딕셔너리 리스트
-        target_condition (str): 리뷰 필터링 조건 명시
-        
-    Returns:
-        dict: 추출된 인사이트 데이터 (JSON 파싱 결과)
-    \"\"\"
+    """
     if not reviews_data:
         logging.warning("추출할 리뷰 데이터가 존재하지 않습니다.")
         return None
         
     logging.info(f"인사이트 추출 시작 (Target: {target_condition}, 데이터: {len(reviews_data)}건)")
-    combined_texts = "\\n".join([f"Review {i+1}: {rev.get('text')}" for i, rev in enumerate(reviews_data) if rev.get('text')])
+    combined_texts = "\n".join([f"Review {i+1}: {rev.get('text')}" for i, rev in enumerate(reviews_data) if rev.get('text')])
     
     try:
         prompt = get_extraction_prompt(combined_texts)
@@ -179,10 +163,3 @@ def extract_insights(reviews_data: list, target_condition: str = "custom") -> di
     except Exception as e:
         logging.error(f"인사이트 추출 API 통신 에러: {str(e)}")
         return None
-"""
-
-output_path = "/mnt/data/analyzer_clean.py"
-with open(output_path, "w", encoding="utf-8") as file:
-    file.write(clean_code)
-
-print(f"Clean python file created at: {output_path}")
