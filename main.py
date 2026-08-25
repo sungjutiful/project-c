@@ -47,7 +47,7 @@ def build_parser():
     p_list.add_argument("--sort", choices=["date", "rating"], default="date")
 
     p_show = sub.add_parser("show", help="[D] 리뷰 상세 조회")
-    p_show.add_argument("id", type=int)
+    p_show.add_argument("--id", type=int, required=True)
 
     sub.add_parser("stats", help="[D] 통계 요약")
     sub.add_parser("dashboard", help="[E] 차트 3종 + 종합 리포트")

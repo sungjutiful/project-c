@@ -70,6 +70,23 @@ def insert_review(product, rating, review_date, text):
     conn.commit()
     conn.close()
 
+def update_review_by_text(text, product, rating, review_date):
+    """
+    [B 요청 · upsert 정책용] text가 완전히 같은 기존 리뷰를 새 값으로 덮어쓴다.
+    status를 'raw'로, text_clean을 비워서 clean을 다시 거치게 만든다.
+    덮어쓴 건수(int)를 돌려준다.
+    """
+    conn = get_conn()
+    cur = conn.execute(
+        """UPDATE reviews
+           SET product = ?, rating = ?, review_date = ?, status = 'raw', text_clean = NULL
+           WHERE text = ?""",
+        (product, rating, review_date, text),
+    )
+    conn.commit()
+    conn.close()
+    return cur.rowcount
+
 
 def mark_cleaned(review_id, text_clean, rating=None, review_date=None):
     conn = get_conn()
