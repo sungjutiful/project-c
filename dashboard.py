@@ -408,7 +408,118 @@ def create_rating_sentiment_chart(reviews):
         )
 
         return output_path
+def create_product_rating_chart(reviews):
+    """제품별 평균 별점을 막대그래프로 저장한다."""
 
+    product_ratings = defaultdict(list)
+
+    for review in reviews:
+        product = review.get("product")
+        rating = review.get("rating")
+
+        if not product:
+            continue
+
+        product_name = str(product).strip()
+
+        try:
+            rating = int(rating)
+        except (TypeError, ValueError):
+            continue
+
+        if rating < 1 or rating > 5:
+            continue
+
+        product_ratings[product_name].append(rating)
+
+    if not product_ratings:
+        print(
+            "[dashboard] 제품과 별점 정보가 있는 리뷰가 없어 "
+            "제품별 평균 별점 차트를 생성하지 않았습니다."
+        )
+        return None
+
+    product_stats = []
+
+    for product, ratings in product_ratings.items():
+        average_rating = sum(ratings) / len(ratings)
+
+        product_stats.append(
+            (product, average_rating, len(ratings))
+        )
+
+    # 평균 별점이 높은 제품부터 표시
+    product_stats.sort(
+        key=lambda item: item[1],
+        reverse=True,
+    )
+
+    products = [item[0] for item in product_stats]
+    averages = [item[1] for item in product_stats]
+    counts = [item[2] for item in product_stats]
+
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    config = load_config()
+    chart_dpi = config.get("chart_dpi", 150)
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+
+    bars = ax.bar(
+        products,
+        averages,
+        width=0.6,
+    )
+
+    ax.set_title(
+        "제품별 평균 별점 비교",
+        fontsize=14,
+        fontweight="bold",
+    )
+
+    ax.set_xlabel("제품")
+    ax.set_ylabel("평균 별점")
+
+    # 별점은 1~5점 척도이므로 0~5 범위로 고정
+    ax.set_ylim(0, 5)
+
+    # 막대 위에 평균 별점과 리뷰 수 표시
+    for bar, average, count in zip(
+        bars,
+        averages,
+        counts,
+    ):
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() + 0.08,
+            f"{average:.2f}점\n({count}건)",
+            ha="center",
+            va="bottom",
+        )
+
+    ax.grid(
+        axis="y",
+        alpha=0.25,
+    )
+
+    fig.tight_layout()
+
+    output_path = OUTPUT_DIR / "product_average_rating.png"
+
+    fig.savefig(
+        output_path,
+        dpi=chart_dpi,
+        bbox_inches="tight",
+    )
+
+    plt.close(fig)
+
+    print(
+        f"[dashboard] 제품별 평균 별점 차트 저장 완료: "
+        f"{output_path}"
+    )
+
+    return output_path
 def run_dashboard():
     """대시보드 생성을 실행한다."""
     setup_korean_font()
@@ -426,6 +537,7 @@ def run_dashboard():
     create_sentiment_chart(reviews)
     create_time_trend_chart(reviews)
     create_rating_sentiment_chart(reviews)
+    create_product_rating_chart(reviews)
 if __name__ == "__main__":
     run_dashboard()
    
