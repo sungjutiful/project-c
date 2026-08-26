@@ -795,24 +795,72 @@ def generate_report(reviews):
 
     return output_path   
 def run_dashboard():
-    """대시보드 생성을 실행한다."""
+    """대시보드와 종합 리포트를 생성한다."""
+
+    print("[dashboard] 대시보드 생성을 시작합니다.")
+
     setup_korean_font()
 
-    reviews = get_all_reviews(status="clean")
+    try:
+        reviews = get_all_reviews(status="clean")
+    except Exception as error:
+        print(
+            f"[dashboard] 리뷰 데이터를 불러오는 중 오류가 발생했습니다: "
+            f"{error}"
+        )
+        return
 
     if not reviews:
-        print("[dashboard] 정제된 리뷰가 없습니다.")
+        print("[dashboard] 정제된 리뷰가 없어 작업을 종료합니다.")
         return
 
     print(
         f"[dashboard] 정제 리뷰 {len(reviews)}건을 불러왔습니다."
     )
 
-    create_sentiment_chart(reviews)
-    create_time_trend_chart(reviews)
-    create_rating_sentiment_chart(reviews)
-    create_product_rating_chart(reviews)
-    generate_report(reviews)
+    created_outputs = []
+
+    chart_functions = [
+        create_sentiment_chart,
+        create_time_trend_chart,
+        create_rating_sentiment_chart,
+        create_product_rating_chart,
+    ]
+
+    for chart_function in chart_functions:
+        try:
+            result = chart_function(reviews)
+
+            if result:
+                created_outputs.append(result)
+
+        except Exception as error:
+            print(
+                f"[dashboard] {chart_function.__name__} 실행 중 "
+                f"오류가 발생했습니다: {error}"
+            )
+
+    try:
+        report_path = generate_report(reviews)
+
+        if report_path:
+            created_outputs.append(report_path)
+
+    except Exception as error:
+        print(
+            f"[dashboard] 종합 리포트 생성 중 오류가 발생했습니다: "
+            f"{error}"
+        )
+
+    print()
+    print("[dashboard] 작업이 완료되었습니다.")
+    print(
+        f"[dashboard] 생성된 결과물: "
+        f"{len(created_outputs)}개"
+    )
+
+    for output_path in created_outputs:
+        print(f"  - {output_path.name}")
 if __name__ == "__main__":
     run_dashboard()
    
