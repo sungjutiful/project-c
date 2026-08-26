@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from matplotlib import font_manager
 from matplotlib.ticker import MaxNLocator
 
-from storage import get_all_reviews
+from storage import get_all_reviews, get_latest_extraction
 
 
 # 프로젝트 기준 경로
@@ -520,6 +520,280 @@ def create_product_rating_chart(reviews):
     )
 
     return output_path
+
+
+def generate_report(reviews):
+    """리뷰 통계와 AI 추출 결과를 종합하여 Markdown 리포트를 생성한다."""
+
+    if not reviews:
+        print("[dashboard] 리포트를 생성할 리뷰가 없습니다.")
+        return None
+
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    sentiment_order = ["positive", "neutral", "negative"]
+
+    sentiment_labels = {
+        "positive": "긍정",
+        "neutral": "중립",
+        "negative": "부정",
+    }
+
+    # ----------------------------
+    # 1. 기본 통계
+    # ----------------------------
+    total_reviews = len(reviews)
+
+    analyzed_reviews = [
+        review
+        for review in reviews
+        if review.get("sentiment") in sentiment_order
+    ]
+
+    analyzed_count = len(analyzed_reviews)
+
+    analysis_rate = (
+        analyzed_count / total_reviews * 100
+        if total_reviews > 0
+        else 0
+    )
+
+    # ----------------------------
+    # 2. 평균 별점
+    # ----------------------------
+    valid_ratings = []
+
+    for review in reviews:
+        try:
+            rating = int(review.get("rating"))
+        except (TypeError, ValueError):
+            continue
+
+        if 1 <= rating <= 5:
+            valid_ratings.append(rating)
+
+    average_rating = (
+        sum(valid_ratings) / len(valid_ratings)
+        if valid_ratings
+        else 0
+    )
+
+    # ----------------------------
+    # 3. 평균 감정 신뢰도
+    # ----------------------------
+    valid_scores = []
+
+    for review in analyzed_reviews:
+        try:
+            score = float(review.get("score"))
+        except (TypeError, ValueError):
+            continue
+
+        if 0 <= score <= 1:
+            valid_scores.append(score)
+
+    average_confidence = (
+        sum(valid_scores) / len(valid_scores)
+        if valid_scores
+        else 0
+    )
+
+    # ----------------------------
+    # 4. 감정별 통계
+    # ----------------------------
+    sentiment_counts = Counter(
+        review.get("sentiment")
+        for review in analyzed_reviews
+    )
+
+    # ----------------------------
+    # 5. TOP 3 제품
+    # ----------------------------
+    product_counts = Counter(
+        str(review.get("product")).strip()
+        for review in reviews
+        if review.get("product")
+    )
+
+    top_products = product_counts.most_common(3)
+
+    # ----------------------------
+    # 6. AI 추출 결과
+    # ----------------------------
+    extraction = get_latest_extraction()
+
+    report_lines = [
+        "# 고객 리뷰 종합 분석 리포트",
+        "",
+        "## 1. 기본 현황",
+        "",
+        f"- 전체 정제 리뷰: **{total_reviews}건**",
+        f"- 감정 분석 완료 리뷰: **{analyzed_count}건**",
+        f"- 감정 분석 완료율: **{analysis_rate:.1f}%**",
+        f"- 평균 별점: **{average_rating:.2f} / 5.00**",
+        f"- 평균 감정 신뢰도: **{average_confidence:.2f}**",
+        "",
+        "## 2. 감정 분포",
+        "",
+    ]
+
+    for sentiment in sentiment_order:
+        count = sentiment_counts[sentiment]
+
+        percentage = (
+            count / analyzed_count * 100
+            if analyzed_count > 0
+            else 0
+        )
+
+        report_lines.append(
+            f"- {sentiment_labels[sentiment]}: "
+            f"**{count}건 ({percentage:.1f}%)**"
+        )
+
+    report_lines.extend(
+        [
+            "",
+            "## 3. 리뷰 수 기준 TOP 3 제품",
+            "",
+        ]
+    )
+
+    if top_products:
+        for rank, (product, count) in enumerate(
+            top_products,
+            start=1,
+        ):
+            report_lines.append(
+                f"{rank}. {product} - **{count}건**"
+            )
+    else:
+        report_lines.append(
+            "- 제품 정보가 없습니다."
+        )
+
+    report_lines.extend(
+        [
+            "",
+            "## 4. AI 분석 인사이트",
+            "",
+        ]
+    )
+
+    if extraction:
+        target = extraction.get("target") or "전체 리뷰"
+
+        positive_keywords = (
+            extraction.get("pos_keywords")
+            or extraction.get("positive_keywords")
+        )
+
+        negative_keywords = (
+            extraction.get("neg_keywords")
+            or extraction.get("negative_keywords")
+        )
+
+        general_keywords = extraction.get("keywords")
+
+        summary = extraction.get("summary") or "-"
+        suggestions = extraction.get("suggestions") or "-"
+
+        report_lines.append(
+            f"- 분석 대상: **{target}**"
+        )
+
+    if positive_keywords and negative_keywords:
+        report_lines.append(
+            f"- 주요 긍정 키워드: {positive_keywords}"
+        )
+        report_lines.append(
+            f"- 주요 부정 키워드: {negative_keywords}"
+        )
+
+    elif general_keywords:
+        report_lines.append(
+            f"- 주요 키워드: {general_keywords}"
+        )
+
+    elif positive_keywords:
+        # 현재 C의 extract 결과가 일반 키워드를
+        # pos_keywords 필드에 저장한 경우 대응
+        report_lines.append(
+            f"- 주요 키워드: {positive_keywords}"
+        )
+
+    elif negative_keywords:
+        report_lines.append(
+            f"- 주요 키워드: {negative_keywords}"
+        )
+    else:
+        report_lines.append(
+            "- 저장된 AI 키워드/요약 추출 결과가 없습니다."
+        )
+
+    # ----------------------------
+    # 7. 생성된 차트 목록
+    # ----------------------------
+    report_lines.extend(
+        [
+            "",
+            "## 5. 생성 차트",
+            "",
+            "- 감정 분포: `sentiment_distribution.png`",
+            "- 시간별 감정 추이: `sentiment_time_trend.png`",
+            "- 별점별 감정 분포: `rating_sentiment_distribution.png`",
+            "- 제품별 평균 별점 비교: `product_average_rating.png`",
+            "",
+        ]
+    )
+
+    report_text = "\n".join(report_lines)
+
+    output_path = OUTPUT_DIR / "review_report.md"
+
+    with open(
+        output_path,
+        "w",
+        encoding="utf-8",
+    ) as file:
+        file.write(report_text)
+
+    # 콘솔에도 리포트 출력
+    print()
+    print("=" * 60)
+    print("고객 리뷰 종합 분석 리포트")
+    print("=" * 60)
+    print(f"전체 정제 리뷰: {total_reviews}건")
+    print(
+        f"감정 분석 완료: "
+        f"{analyzed_count}건 ({analysis_rate:.1f}%)"
+    )
+    print(f"평균 별점: {average_rating:.2f} / 5.00")
+    print(
+        f"평균 감정 신뢰도: "
+        f"{average_confidence:.2f}"
+    )
+    print("-" * 60)
+
+    for sentiment in sentiment_order:
+        count = sentiment_counts[sentiment]
+
+        percentage = (
+            count / analyzed_count * 100
+            if analyzed_count > 0
+            else 0
+        )
+
+        print(
+            f"{sentiment_labels[sentiment]}: "
+            f"{count}건 ({percentage:.1f}%)"
+        )
+
+    print("-" * 60)
+    print(f"리포트 저장 완료: {output_path}")
+    print("=" * 60)
+
+    return output_path   
 def run_dashboard():
     """대시보드 생성을 실행한다."""
     setup_korean_font()
@@ -538,6 +812,7 @@ def run_dashboard():
     create_time_trend_chart(reviews)
     create_rating_sentiment_chart(reviews)
     create_product_rating_chart(reviews)
+    generate_report(reviews)
 if __name__ == "__main__":
     run_dashboard()
    
