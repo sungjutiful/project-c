@@ -11,6 +11,7 @@ import matplotlib
 matplotlib.use("Agg")  # 화면 없이도 PNG 파일을 저장할 수 있게 설정
 import matplotlib.pyplot as plt
 from matplotlib import font_manager
+from matplotlib.ticker import MaxNLocator
 
 from storage import get_all_reviews
 
@@ -33,9 +34,9 @@ def load_config():
 def setup_korean_font():
     """운영체제에서 사용 가능한 한글 폰트를 찾아 matplotlib에 적용한다."""
     preferred_fonts = [
-        "AppleGothic",          # macOS
-        "Malgun Gothic",       # Windows
-        "NanumGothic",         # Linux / 설치 환경
+        "AppleGothic",       # macOS
+        "Malgun Gothic",     # Windows
+        "NanumGothic",       # Linux / 설치 환경
         "Noto Sans CJK KR",
     ]
 
@@ -63,6 +64,13 @@ def create_sentiment_chart(reviews):
         "negative": "부정",
     }
 
+    # 긍정: 파랑 / 중립: 회색 / 부정: 빨강
+    sentiment_colors = {
+        "positive": "#4C78A8",
+        "neutral": "#A0A0A0",
+        "negative": "#E45756",
+    }
+
     # 감정 분석이 완료된 리뷰만 집계
     counts = Counter(
         review.get("sentiment")
@@ -73,11 +81,26 @@ def create_sentiment_chart(reviews):
     total_analyzed = sum(counts.values())
 
     if total_analyzed == 0:
-        print("[dashboard] 감정 분석이 완료된 리뷰가 없어 감정 분포 차트를 생성하지 않았습니다.")
+        print(
+            "[dashboard] 감정 분석이 완료된 리뷰가 없어 "
+            "감정 분포 차트를 생성하지 않았습니다."
+        )
         return None
 
-    labels = [sentiment_labels[item] for item in sentiment_order]
-    values = [counts[item] for item in sentiment_order]
+    labels = [
+        sentiment_labels[item]
+        for item in sentiment_order
+    ]
+
+    values = [
+        counts[item]
+        for item in sentiment_order
+    ]
+
+    colors = [
+        sentiment_colors[item]
+        for item in sentiment_order
+    ]
 
     # 출력 폴더가 없으면 자동 생성
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -87,11 +110,25 @@ def create_sentiment_chart(reviews):
 
     fig, ax = plt.subplots(figsize=(8, 5))
 
-    bars = ax.bar(labels, values)
+    bars = ax.bar(
+        labels,
+        values,
+        color=colors,
+    )
 
-    ax.set_title("고객 리뷰 감정 분포")
+    ax.set_title(
+        "고객 리뷰 감정 분포",
+        fontsize=14,
+        fontweight="bold",
+    )
+
     ax.set_xlabel("감정")
     ax.set_ylabel("리뷰 수")
+
+    # 리뷰 수는 0, 1, 2, 3 ... 정수 단위로 표시
+    ax.yaxis.set_major_locator(
+        MaxNLocator(integer=True)
+    )
 
     # 막대 위에 건수와 비율 표시
     for bar, count in zip(bars, values):
@@ -107,7 +144,10 @@ def create_sentiment_chart(reviews):
 
     # 가장 높은 막대 위의 글자가 잘리지 않도록 여백 확보
     max_value = max(values)
-    ax.set_ylim(0, max_value * 1.25 if max_value > 0 else 1)
+    ax.set_ylim(
+        0,
+        max_value * 1.25 if max_value > 0 else 1,
+    )
 
     fig.tight_layout()
 
@@ -139,7 +179,9 @@ def run_dashboard():
         print("[dashboard] 정제된 리뷰가 없습니다.")
         return
 
-    print(f"[dashboard] 정제 리뷰 {len(reviews)}건을 불러왔습니다.")
+    print(
+        f"[dashboard] 정제 리뷰 {len(reviews)}건을 불러왔습니다."
+    )
 
     create_sentiment_chart(reviews)
 
