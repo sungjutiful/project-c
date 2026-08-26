@@ -283,6 +283,132 @@ def create_time_trend_chart(reviews):
     )
 
     return output_path
+def create_rating_sentiment_chart(reviews):
+        """별점별 긍정/중립/부정 리뷰 분포를 누적 막대그래프로 저장한다."""
+
+        sentiment_order = ["positive", "neutral", "negative"]
+
+        sentiment_labels = {
+        "positive": "긍정",
+        "neutral": "중립",
+        "negative": "부정",
+        }
+
+        sentiment_colors = {
+        "positive": "#4C78A8",
+        "neutral": "#A0A0A0",
+        "negative": "#E45756",
+        }
+
+        ratings = [1, 2, 3, 4, 5]
+
+        # 별점별 감정 리뷰 수 집계
+        rating_counts = {
+            rating: Counter()
+            for rating in ratings
+        }
+
+        for review in reviews:
+            sentiment = review.get("sentiment")
+            rating = review.get("rating")
+
+            # 감정 분석이 완료되지 않은 리뷰는 제외
+            if sentiment not in sentiment_order:
+                continue
+
+            try:
+                rating = int(rating)
+            except (TypeError, ValueError):
+                continue
+
+            # 별점 범위가 1~5인 데이터만 사용
+            if rating not in ratings:
+                continue
+
+            rating_counts[rating][sentiment] += 1
+
+        total_analyzed = sum(
+            sum(rating_counts[rating].values())
+            for rating in ratings
+        )
+
+        if total_analyzed == 0:
+            print(
+                "[dashboard] 별점과 감정 정보가 있는 리뷰가 없어 "
+                "별점별 감정 분포 차트를 생성하지 않았습니다."
+            )
+            return None
+
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+        config = load_config()
+        chart_dpi = config.get("chart_dpi", 150)
+
+        fig, ax = plt.subplots(figsize=(9, 5))
+
+        bottom = [0] * len(ratings)
+
+        for sentiment in sentiment_order:
+            values = [
+                rating_counts[rating][sentiment]
+                for rating in ratings
+            ]
+
+            ax.bar(
+                ratings,
+                values,
+                bottom=bottom,
+                label=sentiment_labels[sentiment],
+                color=sentiment_colors[sentiment],
+                width=0.6,
+            )
+
+            bottom = [
+                current + value
+                for current, value in zip(bottom, values)
+            ]
+
+        ax.set_title(
+            "별점별 고객 리뷰 감정 분포",
+            fontsize=14,
+            fontweight="bold",
+        )
+
+        ax.set_xlabel("별점")
+        ax.set_ylabel("리뷰 수")
+
+        ax.set_xticks(ratings)
+        ax.set_xticklabels(
+            [f"{rating}점" for rating in ratings]
+        )
+
+        # 리뷰 수는 정수 단위로 표시
+        ax.yaxis.set_major_locator(
+            MaxNLocator(integer=True)
+        )
+
+        ax.legend(title="감정")
+        ax.grid(axis="y", alpha=0.25)
+
+        fig.tight_layout()
+
+        output_path = OUTPUT_DIR / "rating_sentiment_distribution.png"
+
+        fig.savefig(
+            output_path,
+            dpi=chart_dpi,
+            bbox_inches="tight",
+        )
+
+        plt.close(fig)
+
+        print(
+            f"[dashboard] 별점별 감정 분포 차트 저장 완료: "
+            f"{output_path}"
+        )
+
+        return output_path
+
 def run_dashboard():
     """대시보드 생성을 실행한다."""
     setup_korean_font()
@@ -299,7 +425,7 @@ def run_dashboard():
 
     create_sentiment_chart(reviews)
     create_time_trend_chart(reviews)
-
+    create_rating_sentiment_chart(reviews)
 if __name__ == "__main__":
     run_dashboard()
    
