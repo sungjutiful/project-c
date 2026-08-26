@@ -124,24 +124,20 @@ def main():
             print("[WARNING] 추출 실패 (API 에러 또는 대상 리뷰 없음)")
 
     elif args.command == "list":
-
-        print("[준비 중] list")
-
+        import viewer
+        viewer.cmd_list(args)
     elif args.command == "show":
-
-        print(f"[준비 중] show {args.id}")
-
+        import viewer
+        viewer.cmd_show(args)
     elif args.command == "stats":
-
-        print("[준비 중] stats")
-
+        import viewer
+        viewer.cmd_stats(args)
     elif args.command == "dashboard":
-
-        print("[준비 중] dashboard")
-
+        import dashboard
+        dashboard.run_dashboard()
     elif args.command == "export":
-
-        print("[준비 중] export")
+        import viewer
+        viewer.cmd_export(args)
 
     else:
 
