@@ -4,7 +4,8 @@ dashboard.py - E 담당
 """
 
 import json
-from collections import Counter
+from collections import Counter, defaultdict
+from datetime import datetime
 from pathlib import Path
 
 import matplotlib
@@ -168,7 +169,120 @@ def create_sentiment_chart(reviews):
 
     return output_path
 
+def create_time_trend_chart(reviews):
+    """날짜별 긍정/중립/부정 리뷰 수의 변화를 선그래프로 저장한다."""
 
+    sentiment_order = ["positive", "neutral", "negative"]
+
+    sentiment_labels = {
+        "positive": "긍정",
+        "neutral": "중립",
+        "negative": "부정",
+    }
+
+    sentiment_colors = {
+        "positive": "#4C78A8",
+        "neutral": "#A0A0A0",
+        "negative": "#E45756",
+    }
+
+    # 날짜별 감정 리뷰 수 저장
+    daily_counts = defaultdict(Counter)
+
+    for review in reviews:
+        sentiment = review.get("sentiment")
+        review_date = review.get("review_date")
+
+        # 분석되지 않은 리뷰나 날짜가 없는 리뷰는 제외
+        if sentiment not in sentiment_order or not review_date:
+            continue
+
+        try:
+            # YYYY-MM-DD 또는 ISO 형식 날짜 처리
+            parsed_date = datetime.fromisoformat(
+                str(review_date).strip()
+            ).date()
+
+        except (ValueError, TypeError):
+            # 날짜 형식이 잘못된 리뷰는 차트에서 제외
+            continue
+
+        daily_counts[parsed_date][sentiment] += 1
+
+    if not daily_counts:
+        print(
+            "[dashboard] 날짜와 감정 정보가 있는 리뷰가 없어 "
+            "시간별 감정 추이 차트를 생성하지 않았습니다."
+        )
+        return None
+
+    dates = sorted(daily_counts.keys())
+
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    config = load_config()
+    chart_dpi = config.get("chart_dpi", 150)
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    for sentiment in sentiment_order:
+        values = [
+            daily_counts[date][sentiment]
+            for date in dates
+        ]
+
+        ax.plot(
+            dates,
+            values,
+            marker="o",
+            markersize=7,
+            linewidth=3,
+            label=sentiment_labels[sentiment],
+            color=sentiment_colors[sentiment],
+    )
+
+    ax.set_title(
+        "시간별 고객 리뷰 감정 추이",
+        fontsize=14,
+        fontweight="bold",
+    )
+
+    ax.set_xlabel("리뷰 날짜")
+    ax.set_ylabel("리뷰 수")
+
+    # 리뷰 수는 정수 단위로 표시
+    ax.yaxis.set_major_locator(
+        MaxNLocator(integer=True)
+    )
+
+    ax.legend(title="감정")
+    ax.grid(axis="y", alpha=0.25)
+
+   # 실제 리뷰 날짜만 X축에 표시
+    ax.set_xticks(dates)
+    ax.set_xticklabels(
+        [date.strftime("%m-%d") for date in dates],
+        rotation=0,
+    )
+
+    fig.tight_layout()
+
+    output_path = OUTPUT_DIR / "sentiment_time_trend.png"
+
+    fig.savefig(
+        output_path,
+        dpi=chart_dpi,
+        bbox_inches="tight",
+    )
+
+    plt.close(fig)
+
+    print(
+        f"[dashboard] 시간별 감정 추이 차트 저장 완료: "
+        f"{output_path}"
+    )
+
+    return output_path
 def run_dashboard():
     """대시보드 생성을 실행한다."""
     setup_korean_font()
@@ -184,7 +298,7 @@ def run_dashboard():
     )
 
     create_sentiment_chart(reviews)
-
+    create_time_trend_chart(reviews)
 
 if __name__ == "__main__":
     run_dashboard()
