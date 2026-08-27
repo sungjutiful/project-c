@@ -17,7 +17,7 @@
 | B(신미영) — 데이터 수집·정제 | `importer.py` | `import`(CSV/엑셀 읽어 원본 저장, 중복 skip/upsert), `clean`(정제 규칙 5종 적용) |
 | C(최주원) — AI 감정 분석·추출 | `analyzer.py` | `analyze`(OpenAI API로 감정·신뢰도 분석), `extract`(리뷰 묶음에서 키워드·요약·개선 제안 추출) |
 | D(이종명) — 데이터 조회 | `viewer.py` | `list`(필터·정렬·페이지네이션), `show`(리뷰 상세), `stats`(통계 요약), `export`(CSV·엑셀·JSONL 내보내기) |
-| E(손희영) — 시각화·리포트 | `dashboard.py` | 차트 4종(감정 분포·시간별 추이·별점×감정·제품별 평균 별점) + 종합 Markdown 리포트 생성 |
+| E(손희영) — 시각화·리포트 | `dashboard.py` | 차트 4종(감정 분포· 5일 단위 시간별 감정 추이·별점×감정·제품별 평균 별점) + 종합 Markdown 리포트 생성 |
 
 **진행 방식**: 각자 자기 파일만 수정하는 1인 1파일 원칙으로 작업했고, B~E가 파일을 완성해 GitHub에 올리면 A가 `main.py`에 실제로 연결하고 실행 테스트까지 마친 뒤 다시 커밋하는 흐름으로 통합했습니다. 저장소(`storage.py`)와 DB 스키마를 초반에 확정해 공유했기 때문에, 팀원들이 서로의 코드가 완성되기를 기다리지 않고 병렬로 작업할 수 있었습니다.
 
@@ -54,6 +54,7 @@
 
 ### 3-6. 시각화 및 리포트 (`dashboard`)
 - 차트 4종(요구사항 3종 + 제품별 평균 별점 추가): 감정 분포, 시간별 감정 추이, 별점별 감정 분포, 제품별 평균 별점
+- 5일 단위 시간별 감정 추이는 일별 변동을 완화하고 전체 흐름을 보기 쉽도록 리뷰를 5일 단위로 집계해 시각화
 - 한글 폰트를 OS별로 자동 탐색해 적용 (macOS: AppleGothic, Windows: Malgun Gothic 등)
 - 종합 리포트: 품질 지표(분석 완료율, 평균 감정 신뢰도 등), TOP 3 제품, AI 추출 결과를 콘솔 출력 + `output/review_report.md` 파일로 저장
 
@@ -112,7 +113,7 @@ python3 main.py export --format csv
 ```
 output/
 ├── sentiment_distribution.png       # 감정 분포
-├── sentiment_time_trend.png         # 시간별 감정 추이
+├── sentiment_time_trend.png         # 5일 단위 시간별 감정 추이
 ├── rating_sentiment_distribution.png # 별점별 감정 분포
 ├── product_average_rating.png       # 제품별 평균 별점
 ├── review_report.md                 # 종합 분석 리포트
