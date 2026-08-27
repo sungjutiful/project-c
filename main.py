@@ -36,6 +36,8 @@ def build_parser():
     p_extract = sub.add_parser("extract", help="[C] 키워드·요약·개선제안 추출")
     p_extract.add_argument("--sentiment")
     p_extract.add_argument("--product")
+    p_extract.add_argument("--date-from")
+    p_extract.add_argument("--date-to")
 
     p_list = sub.add_parser("list", help="[D] 리뷰 목록 조회")
     p_list.add_argument("--sentiment")
@@ -102,12 +104,17 @@ def main():
 
     elif args.command == "extract":
         import analyzer
-        reviews = storage.query_reviews(sentiment=args.sentiment)
+        reviews = storage.query_reviews(
+            sentiment=args.sentiment,
+            date_from=args.date_from,
+            date_to=args.date_to,
+        )
         if args.product:
             reviews = [r for r in reviews if r.get("product") == args.product]
         reviews = reviews[:30]
 
-        condition_desc = f"sentiment={args.sentiment or '전체'}, product={args.product or '전체'}"
+        period_desc = f"{args.date_from or '...'} ~ {args.date_to or '...'}" if (args.date_from or args.date_to) else "전체"
+        condition_desc = f"sentiment={args.sentiment or '전체'}, product={args.product or '전체'}, period={period_desc}"
         print(f"[INFO] 추출 대상: {condition_desc} {len(reviews)}건")
         result = analyzer.extract_insights(reviews, target_condition=condition_desc)
 
