@@ -44,7 +44,7 @@
 - API 통신 오류나 응답 형식 오류가 나면 해당 건만 로깅 후 건너뛰고 나머지는 계속 진행
 
 ### 3-4. AI 키워드·요약 추출 (`extract`)
-- 조건(감정/제품)에 맞는 리뷰를 최대 30건까지 모아 한 번에 AI에 요청
+- 조건(감정/제품/기간)에 맞는 리뷰를 최대 30건까지 모아 한 번에 AI에 요청
 - 키워드, 전체 요약, 개선 제안을 추출해 저장
 
 ### 3-5. 데이터 조회 (`list` / `show` / `stats`)
@@ -98,7 +98,7 @@ python3 main.py export --format csv
 | `import` | `--file` (필수) |
 | `clean` | (옵션 없음) |
 | `analyze` | `--all`, `--id`, `--unanalyzed`, `--limit` |
-| `extract` | `--sentiment`, `--product` |
+| `extract` | `--sentiment`, `--product`, `--date-from`, `--date-to` |
 | `list` | `--sentiment`, `--rating`, `--date-from`, `--date-to`, `--page`, `--size`, `--sort` |
 | `show` | `--id` (필수) |
 | `stats` | (옵션 없음) |
