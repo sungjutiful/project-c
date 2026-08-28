@@ -123,7 +123,7 @@ def cmd_show(args):
 
 def cmd_stats(args):
     """stats: 전체 통계 요약 (Day 3). 과제 예시 형식 그대로."""
-    rows = storage.get_all_reviews()
+    rows = storage.get_all_reviews(status="clean")
     total = len(rows)
     if total == 0:
         logger.warning("stats: 저장된 리뷰가 없습니다 — import부터 실행하세요")
