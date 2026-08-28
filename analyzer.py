@@ -60,7 +60,9 @@ def analyze_reviews(reviews_data: list, unanalyzed_only: bool = True, limit: int
             break
             
         review_id = review.get('id')
-        text = review.get('text')
+        
+        # [수정됨] 정제된 텍스트(text_clean)를 우선 사용하고, 없으면 원문(text) 사용
+        text = review.get('text_clean') or review.get('text')
         
         if not text:
             continue
@@ -137,7 +139,9 @@ def extract_insights(reviews_data: list, target_condition: str = "custom") -> di
         return None
         
     logging.info(f"인사이트 추출 시작 (Target: {target_condition}, 데이터: {len(reviews_data)}건)")
-    combined_texts = "\n".join([f"Review {i+1}: {rev.get('text')}" for i, rev in enumerate(reviews_data) if rev.get('text')])
+    
+    # [수정됨] 정제된 텍스트(text_clean)를 우선 사용하도록 수정
+    combined_texts = "\n".join([f"Review {i+1}: {rev.get('text_clean') or rev.get('text')}" for i, rev in enumerate(reviews_data) if (rev.get('text_clean') or rev.get('text'))])
     
     try:
         prompt = get_extraction_prompt(combined_texts)
