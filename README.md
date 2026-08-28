@@ -130,5 +130,5 @@ SQLite(`reviews.db`)에 테이블 2개를 사용합니다.
 
 ## 7. 샘플 데이터
 
-- `data/sample_reviews.csv`: 정상 리뷰 샘플 데이터(약 40건, 중복 제거 후 clean 38건)
+- `data/sample_reviews.csv`: 정상 리뷰 샘플 데이터(약 40건, 10자 미만 짧은 리뷰 2건 clean 제외 후 38건)
 - `data/bad_reviews.csv`: 정제 규칙 검증용 불량 데이터 (별점 범위 초과, 빈 값, 잘못된 날짜 등 포함)
